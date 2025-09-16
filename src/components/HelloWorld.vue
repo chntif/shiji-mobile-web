@@ -2,7 +2,6 @@
 defineProps<{
   msg: string;
 }>();
-const unusedVariable = 'I am not used';
 </script>
 
 <template>

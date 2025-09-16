@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router';
 import HelloWorld from './components/HelloWorld.vue';
-// 12
-const name = 'test husky';
+// 123
 </script>
 
 <template>
@@ -42,6 +41,7 @@ h1 {
   display: block;
   position: absolute; /* <--- 错误的属性顺序，position 应该在 top 前面 */
 }
+
 header {
   line-height: 1.5;
   max-height: 100vh;
