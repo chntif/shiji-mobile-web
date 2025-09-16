@@ -1,0 +1,23 @@
+# .editorconfig
+
+# 这是一个 EditorConfig 的顶级配置文件
+root = true
+
+[*]
+# 字符集
+charset = utf-8
+# 换行符，lf 代表 \n (Unix/Linux), crlf 代表 \r\n (Windows)
+end_of_line = lf
+# 缩进风格，space 代表空格，tab 代表制表符
+indent_style = space
+# 缩进大小
+indent_size = 2
+# 在文件末尾插入一个新行
+insert_final_newline = true
+# 去除行尾的无效空格
+trim_trailing_whitespace = true
+
+[*.md]
+# 对于 Markdown 文件，不做特殊处理
+insert_final_newline = false
+trim_trailing_whitespace = false
