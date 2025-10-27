@@ -1,6 +1,6 @@
 {
-  "name": "vue3-standard-scaffold",
-  "version": "0.0.0",
+  "name": "shiji-mobile-web",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {

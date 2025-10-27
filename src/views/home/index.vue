@@ -138,7 +138,7 @@ const handleBuy = (type: string, price: number) => {
   padding: 16px;
   padding-bottom: 60px;
   background: #f5f7fa;
-  min-height: calc(100vh - 46px);
+  min-height: calc(100vh - 56px);
 }
 
 // VIP 卡片

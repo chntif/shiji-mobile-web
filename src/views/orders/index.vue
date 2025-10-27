@@ -159,17 +159,17 @@ const onRefresh = () => {
 
 <style scoped lang="scss">
 .orders-page {
-  min-height: calc(100vh - 46px);
+  min-height: calc(100vh - 56px);
   background: #f5f7fa;
   padding: 16px;
   padding-bottom: 60px;
 
   :deep(.van-pull-refresh) {
-    min-height: calc(100vh - 78px);
+    min-height: calc(100vh - 88px);
   }
 
   :deep(.van-pull-refresh__track) {
-    min-height: calc(100vh - 78px);
+    min-height: calc(100vh - 88px);
   }
 }
 
