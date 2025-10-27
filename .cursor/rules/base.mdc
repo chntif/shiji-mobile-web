@@ -130,6 +130,7 @@ src/
 2. **Authorization** (权限令牌)
    - 开发调试阶段需要手动设置
    - 使用 `setAuthToken(token)` 方法设置令牌
+   - 会自动添加 `Bearer ` 前缀（如 `Bearer your-token`）
    - 在 `src/utils/request.ts` 中管理
 
 ### 使用方法
@@ -138,8 +139,11 @@ src/
 ```typescript
 import { setAuthToken } from '@/utils/request'
 
-// 在应用初始化或登录后设置
+// 在应用初始化或登录后设置（会自动添加 "Bearer " 前缀）
 setAuthToken('your-token-here')
+
+// 或者手动传入带 Bearer 前缀的 token（不会重复添加）
+// setAuthToken('Bearer your-token-here')
 ```
 
 2. **发起 API 请求**

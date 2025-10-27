@@ -11,6 +11,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppHeader: typeof import('./src/components/AppHeader.vue')['default']
+    AppLayout: typeof import('./src/components/AppLayout.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']
@@ -21,6 +23,14 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     TheWelcome: typeof import('./src/components/TheWelcome.vue')['default']
     VanButton: typeof import('vant/es')['Button']
+    VanEmpty: typeof import('vant/es')['Empty']
+    VanIcon: typeof import('vant/es')['Icon']
+    VanList: typeof import('vant/es')['List']
+    VanNavBar: typeof import('vant/es')['NavBar']
+    VanPopup: typeof import('vant/es')['Popup']
+    VanPullRefresh: typeof import('vant/es')['PullRefresh']
+    VanRadio: typeof import('vant/es')['Radio']
+    VanRadioGroup: typeof import('vant/es')['RadioGroup']
     WelcomeItem: typeof import('./src/components/WelcomeItem.vue')['default']
   }
 }

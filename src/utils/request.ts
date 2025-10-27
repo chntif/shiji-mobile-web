@@ -9,10 +9,11 @@ let authToken = ''
 
 /**
  * 设置 Authorization Token（开发调试用）
- * @param token - 认证令牌
+ * @param token - 认证令牌（会自动添加 "Bearer " 前缀，如果已有则不重复添加）
  */
 export const setAuthToken = (token: string) => {
-    authToken = token
+    // 如果 token 已经包含 Bearer 前缀，直接使用；否则添加前缀
+    authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`
 }
 
 /**
@@ -37,7 +38,7 @@ instance.interceptors.request.use(
         // 添加固定的 clientid
         config.headers.clientid = CLIENT_ID
 
-        // 添加 Authorization（如果已设置）
+        // 添加 Authorization（如果已设置，格式：Bearer token）
         if (authToken) {
             config.headers.Authorization = authToken
         }

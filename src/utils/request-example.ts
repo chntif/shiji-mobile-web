@@ -10,9 +10,11 @@ import { setAuthToken, request } from './request'
 // ========================================
 // 在应用初始化时或登录成功后调用
 export function initAuth() {
-    // 手动设置你的 token
-    const token = 'Bearer your-token-here'
-    setAuthToken(token)
+    // 方式 1：直接传入 token，会自动添加 "Bearer " 前缀
+    setAuthToken('your-token-here')
+
+    // 方式 2：也可以手动传入带 Bearer 前缀的 token（不会重复添加）
+    // setAuthToken('Bearer your-token-here')
 }
 
 // ========================================
@@ -91,9 +93,9 @@ import { setAuthToken, request } from '@/utils/request'
 const userInfo = ref<any>(null)
 const loading = ref(false)
 
-// 初始化时设置 token
+// 初始化时设置 token（自动添加 "Bearer " 前缀）
 onMounted(() => {
-  setAuthToken('your-token-here')
+  setAuthToken('your-token-here')  // 最终会变成 "Bearer your-token-here"
   fetchUserInfo()
 })
 
