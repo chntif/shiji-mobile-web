@@ -34,5 +34,14 @@ export default defineConfigWithVueTs(
     files: ['src/**/__tests__/*']
   },
   ...pluginOxlint.configs['flat/recommended'],
-  skipFormatting
+  skipFormatting,
+
+  // 自定义规则
+  {
+    name: 'app/custom-rules',
+    rules: {
+      // 关闭 Vue 组件名多单词限制
+      'vue/multi-word-component-names': 'off'
+    }
+  }
 );

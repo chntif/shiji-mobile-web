@@ -1,0 +1,207 @@
+---
+description: Vue3 H5 项目开发规范 - 微信内置浏览器适配
+globs:
+alwaysApply: true
+---
+
+# 项目概述
+
+这是一个基于 Vue3 的 H5 移动端项目，主要运行在微信内置浏览器中。
+
+## 技术栈
+
+- **前端框架**: Vue 3 (Composition API)
+- **UI 组件库**: Vant 4.x
+- **构建工具**: Vite
+- **样式预处理器**: SCSS
+- **路由**: Vue Router
+- **状态管理**: Pinia
+
+## 移动端适配方案
+
+### Rem 方案配置
+
+- 使用 `postcss-pxtorem` + `Autoprefixer` 实现移动端适配
+- **rootValue: 37.5** (基于 375px 设计稿)
+- 编写样式时直接使用 `px` 单位，会自动转换为 `rem`
+- 设计稿尺寸 / 10 = 代码中的 px 值（例如：设计稿 750px → 代码 75px）
+
+### 响应式布局
+
+- 项目主要在微信内置浏览器中打开
+- **PC 端适配**: 当用户使用电脑打开时，页面两侧设置空白区域，模拟手机屏幕的宽高比
+- 建议最大宽度限制在 750px，超出部分居中显示
+
+## 组件自动导入
+
+- 使用 `unplugin-vue-components` 配置了 Vant 组件的自动导入
+- 无需手动 import Vant 组件，直接在模板中使用即可
+- 组件名称使用 PascalCase 或 kebab-case 均可（如 `<van-button>` 或 `<VanButton>`）
+
+## 微信相关功能
+
+### 微信支付
+
+- 微信支付功能专门在**微信内置浏览器**中实现
+- 需要使用 JSSDK 进行支付调用
+- 确保在调用支付前完成微信 JS-SDK 的配置和授权
+
+### 微信 JSSDK
+
+- 需要进行微信 JS-SDK 配置和签名验证
+- 常用功能：分享、支付、位置、图片上传等
+
+## 开发规范
+
+### 代码风格
+
+1. **Vue 组件**
+   - 使用 Composition API (`<script setup>`)
+   - 组件文件名使用 PascalCase（如 `UserProfile.vue`）
+   - 单文件组件顺序：`<template>` → `<script setup>` → `<style scoped>`
+
+2. **样式编写**
+   - 优先使用 SCSS
+   - 直接使用 `px` 单位，postcss 会自动转换为 `rem`
+   - 组件样式使用 `scoped` 避免样式污染
+   - 公共样式放在 `src/assets` 目录
+
+3. **TypeScript**
+   - 使用 TypeScript 编写代码
+   - 为 props、emits、ref 等添加明确的类型定义
+   - 接口定义放在单独的 `.ts` 文件或组件内部
+
+4. **命名规范**
+   - 变量、函数：camelCase（如 `getUserInfo`）
+   - 常量：UPPER_SNAKE_CASE（如 `API_BASE_URL`）
+   - 组件名：PascalCase（如 `UserCard`）
+   - 文件夹：kebab-case（如 `user-profile`）
+
+### 文件组织
+
+```
+src/
+├── assets/          # 静态资源（样式、图片等）
+├── components/      # 公共组件
+├── views/           # 页面组件
+├── router/          # 路由配置
+├── stores/          # Pinia 状态管理
+├── utils/           # 工具函数
+├── api/             # API 接口
+└── types/           # TypeScript 类型定义
+```
+
+### 重要约定
+
+1. **不自动生成额外文件**
+   - 除非明确要求，否则不要生成测试文件（`.test.ts`、`.spec.ts`）
+   - 除非明确要求，否则不要生成 Markdown 说明文件
+   - 专注于实现功能代码本身
+
+2. **移动端优先**
+   - 所有组件和页面都应该以移动端为主要设计目标
+   - 考虑触摸操作、手势交互
+   - 注意移动端性能优化
+
+3. **微信环境检测**
+   - 涉及微信特定功能时，需要检测是否在微信浏览器环境
+   - 提供非微信环境的降级方案或友好提示
+
+4. **兼容性**
+   - 主要兼容微信内置浏览器（iOS & Android）
+   - 测试时注意不同操作系统的微信版本差异
+
+## API 请求规范
+
+### 请求配置
+
+- **基础路径**: `/api`
+- **代理转发**: `https://www.shiji.morgen-ai.com/prod-api/`
+- **超时时间**: 15 秒
+
+### 请求头配置
+
+项目中所有 API 请求都会自动添加以下请求头：
+
+1. **clientid** (固定值)
+   - 值：`e5cd7e4891bf95d1d19206ce24a7b32e`
+   - 所有请求自动携带，无需手动添加
+
+2. **Authorization** (权限令牌)
+   - 开发调试阶段需要手动设置
+   - 使用 `setAuthToken(token)` 方法设置令牌
+   - 在 `src/utils/request.ts` 中管理
+
+### 使用方法
+
+1. **设置 Authorization Token**（仅开发阶段）
+```typescript
+import { setAuthToken } from '@/utils/request'
+
+// 在应用初始化或登录后设置
+setAuthToken('your-token-here')
+```
+
+2. **发起 API 请求**
+```typescript
+import { request } from '@/utils/request'
+
+// GET 请求
+const data = await request.get('/user/info')
+
+// POST 请求
+const result = await request.post('/login', {
+  username: 'admin',
+  password: '123456'
+})
+```
+
+3. **API 接口管理**
+   - 所有 API 接口定义在 `src/api/` 目录
+   - 每个模块创建独立的 API 文件
+   - 统一在 `src/api/index.ts` 中导出
+   - 为接口参数和返回值添加类型定义
+
+### API 文件组织
+
+```typescript
+// src/api/user.ts
+export const getUserInfo = () => {
+  return request.get<UserInfo>('/user/info')
+}
+
+export const updateUser = (data: UpdateUserParams) => {
+  return request.post('/user/update', data)
+}
+```
+
+### 类型定义
+
+- API 相关的类型定义放在 `src/types/api.ts`
+- 为每个接口定义请求参数和响应数据类型
+- 使用泛型约束返回值类型
+
+### 错误处理
+
+- 网络错误和业务错误已在 `request.ts` 中统一处理
+- 使用 Vant 的 `Toast` 组件显示错误提示
+- 特殊业务场景可在具体接口调用时单独处理
+
+## 常用 Vant 组件
+
+- `Button` - 按钮
+- `Cell` - 单元格
+- `Form` / `Field` - 表单
+- `Popup` - 弹出层
+- `Toast` - 轻提示
+- `Dialog` - 弹窗
+- `List` - 列表
+- `PullRefresh` - 下拉刷新
+- `NavBar` - 导航栏
+- `Tabbar` - 标签栏
+
+## 调试建议
+
+- 使用微信开发者工具进行调试
+- 使用 vconsole 在真机上查看日志
+- 注意真机测试，特别是支付、分享等微信功能

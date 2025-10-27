@@ -1,29 +1,7 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router';
-import HelloWorld from './components/HelloWorld.vue';
-// 123
 </script>
 
 <template>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
   <RouterView />
 </template>
 
@@ -36,10 +14,12 @@ h1 {
 }
 
 .greetings {
-  color: #123456; /* <--- 错误的颜色值 (6位) */
+  color: #123456;
+  /* <--- 错误的颜色值 (6位) */
   top: 0;
   display: block;
-  position: absolute; /* <--- 错误的属性顺序，position 应该在 top 前面 */
+  position: absolute;
+  /* <--- 错误的属性顺序，position 应该在 top 前面 */
 }
 
 header {
@@ -77,7 +57,7 @@ nav a:first-of-type {
   border: 0;
 }
 
-@media (width >= 1024px) {
+@media (width >=1024px) {
   header {
     display: flex;
     place-items: center;
