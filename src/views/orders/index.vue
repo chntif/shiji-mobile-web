@@ -101,7 +101,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { showToast, showDialog, showLoadingToast, closeToast } from 'vant'
+import { showToast, showConfirmDialog, showLoadingToast, closeToast } from 'vant'
 import AppLayout from '@/components/AppLayout.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import { getOrderList, closeOrder } from '@/api/order'
@@ -233,13 +233,13 @@ const onTabChange = () => {
 // 取消订单
 const handleCancelOrder = async (order: Order) => {
   try {
-    // 弹出确认对话框
-    await showDialog({
+    // 弹出确认对话框（showConfirmDialog 自动挂载到 body）
+    await showConfirmDialog({
       title: '确认取消',
       message: `确定要取消订单吗？\n订单号：${order.outTradeNo}`,
       confirmButtonText: '确认取消',
       cancelButtonText: '我再想想',
-      confirmButtonColor: '#ff6b6b'
+      confirmButtonColor: '#ff6b6b',
     })
 
     // 显示加载提示

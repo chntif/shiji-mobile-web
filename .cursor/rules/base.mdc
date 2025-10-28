@@ -204,6 +204,30 @@ export const updateUser = (data: UpdateUserParams) => {
 - `NavBar` - 导航栏
 - `Tabbar` - 标签栏
 
+### Vant 函数式组件样式引入规范
+
+- 由于项目使用 `unplugin-vue-components` + `VantResolver()`，普通组件（如 `Button`、`List`、`Tabs` 等）会自动按需引入样式与代码，无需手动导入。
+- 但 Vant 的“函数式组件”需要手动引入样式，否则会出现不可见/层级异常等问题。
+- 已知需要手动样式引入的函数式组件：
+  - `Dialog`（含 `showDialog` / `showConfirmDialog`）：
+    ```ts
+    import 'vant/es/dialog/style'
+    ```
+  - `Toast`（含 `showToast` / `showLoadingToast` / `closeToast`）：
+    ```ts
+    import 'vant/es/toast/style'
+    ```
+  - 如使用 `Notify`：
+    ```ts
+    import 'vant/es/notify/style'
+    ```
+  - 如使用 `ImagePreview`：
+    ```ts
+    import 'vant/es/image-preview/style'
+    ```
+
+建议在 `src/main.ts` 统一引入当前已使用的函数式组件样式，并随着功能增加按需补充。
+
 ## 调试建议
 
 - 使用微信开发者工具进行调试
