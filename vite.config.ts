@@ -23,7 +23,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://www.shiji.morgen-ai.com/prod-api/app/',
+        target: 'https://www.shiji.morgen-ai.com/prod-api/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }

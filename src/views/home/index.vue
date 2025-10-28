@@ -1,136 +1,230 @@
 <template>
   <app-layout>
-    <app-header title="时机AI圈主神器" />
+    <app-header title="时机" />
     
     <div class="home-page">
-      <!-- VIP 会员特权卡 -->
-      <div class="vip-card">
-        <div class="vip-header">
-          <van-icon name="diamond-o" class="vip-icon" />
-          <span class="vip-title">VIP会员特权</span>
-        </div>
-        <div class="vip-desc">解锁全部功能，成为"offer收割机"</div>
-        
-        <div class="vip-info">
-          <div class="vip-info-item">
-            <span class="label">VIP会员到期时间</span>
-            <span class="value expired">已过期</span>
-          </div>
-          <div class="vip-info-item">
-            <span class="label">永久训练卡</span>
-            <span class="value">1 张</span>
-          </div>
-        </div>
+      <!-- 加载状态 -->
+      <van-loading v-if="loading" class="loading-center" vertical>
+        加载中...
+      </van-loading>
 
-        <!-- 装饰元素 -->
-        <div class="decoration decoration-1"></div>
-        <div class="decoration decoration-2"></div>
-      </div>
-
-      <!-- 选择购买 -->
-      <div class="section-title">选择购买</div>
-
-      <!-- VIP 套餐 -->
-      <div class="product-card">
-        <div class="product-header">
-          <div class="product-title">VIP会员月度套餐</div>
-          <div class="product-price">
-            <span class="price-num">39.9</span>
-            <span class="price-unit">元</span>
+      <template v-else>
+        <!-- VIP 会员特权卡 -->
+        <div class="vip-card">
+          <div class="vip-header">
+            <van-icon name="diamond-o" class="vip-icon" />
+            <span class="vip-title">VIP会员特权</span>
           </div>
-          <van-button 
-            type="primary" 
-            size="small" 
-            round
-            class="buy-btn"
-            @click="handleBuy('vip', 39.9)"
-          >
-            购买
-          </van-button>
+          <div class="vip-desc">解锁全部功能，成为"offer收割机"</div>
+          
+          <div class="vip-info">
+            <div class="vip-info-item">
+              <span class="label">VIP会员到期时间</span>
+              <span :class="['value', vipStatusClass]">{{ vipStatusText }}</span>
+            </div>
+            <div class="vip-info-item">
+              <span class="label">永久训练卡</span>
+              <span class="value">{{ userBenefit?.cardBalance || 0 }} 张</span>
+            </div>
+            <div class="vip-info-item">
+              <span class="label">临时训练卡</span>
+              <span class="value">{{ userBenefit?.tempCardBalance || 0 }} 张</span>
+            </div>
+          </div>
+
+          <!-- 装饰元素 -->
+          <div class="decoration decoration-1"></div>
+          <div class="decoration decoration-2"></div>
         </div>
 
-        <van-radio-group v-model="vipOption">
-          <div class="option-item">
-            <van-radio name="1">每天领取100枚合训训练卡</van-radio>
-          </div>
-          <div class="option-item">
-            <van-radio name="2">人岗匹配新闻权</van-radio>
-          </div>
-        </van-radio-group>
-      </div>
+        <!-- 选择购买 -->
+        <div class="section-title">选择购买</div>
 
-      <!-- 永久训练卡 -->
-      <div class="product-card">
-        <div class="product-header-simple">
-          <div class="product-title">永久训练卡</div>
-        </div>
-        
-        <div class="product-desc">
-          使用训练卡参与模拟面试、只真简历和和模拟训练
-        </div>
-
-        <van-radio-group v-model="cardOption">
-          <div class="option-item">
-            <van-radio name="forever">永久有效</van-radio>
-          </div>
-        </van-radio-group>
-
-        <div class="card-items">
-          <div class="card-item">
-            <div class="card-item-info">
-              <div class="card-name">永久训练卡 1张</div>
-              <div class="card-price">
-                <span class="price-num">9.9</span>
-                <span class="price-unit">元</span>
-              </div>
+        <!-- VIP 套餐 -->
+        <div v-if="vipProduct" class="product-card">
+          <div class="product-header">
+            <div class="product-title">{{ vipProduct.productName }}</div>
+            <div class="product-price">
+              <span class="price-num">{{ vipProduct.discountPrice }}</span>
+              <span class="price-unit">元</span>
             </div>
             <van-button 
-              type="warning" 
+              type="primary" 
               size="small" 
               round
               class="buy-btn"
-              @click="handleBuy('card1', 9.9)"
+              @click="handleBuy(vipProduct)"
             >
               购买
             </van-button>
           </div>
 
-          <div class="card-item">
-            <div class="card-item-info">
-              <div class="card-name">永久训练卡 10张</div>
-              <div class="card-price">
-                <span class="price-num">59.9</span>
-                <span class="price-unit">元</span>
-              </div>
-            </div>
-            <van-button 
-              type="warning" 
-              size="small" 
-              round
-              class="buy-btn"
-              @click="handleBuy('card10', 59.9)"
-            >
-              购买
-            </van-button>
+          <div class="product-desc">{{ vipProduct.productDescription }}</div>
+
+          <!-- 优惠券提示 -->
+          <div v-if="vipProduct.hasCoupon && vipProduct.couponName" class="coupon-tip">
+            <van-icon name="fire-o" />
+            <span>已使用优惠券：{{ vipProduct.couponName }}</span>
           </div>
         </div>
-      </div>
+
+        <!-- 永久训练卡 -->
+        <div v-if="cardProducts.length > 0" class="product-card">
+          <div class="product-header-simple">
+            <div class="product-title">永久训练卡</div>
+          </div>
+          
+          <div class="product-desc">
+            使用训练卡参与模拟面试、优化简历和模拟训练
+          </div>
+
+          <van-radio-group v-model="cardOption">
+            <div class="option-item">
+              <van-radio name="forever">永久有效</van-radio>
+            </div>
+          </van-radio-group>
+
+          <div class="card-items">
+            <div 
+              v-for="card in cardProducts" 
+              :key="card.productCode" 
+              class="card-item"
+            >
+              <div class="card-item-info">
+                <div class="card-name">{{ card.productName }}</div>
+                <div class="card-price">
+                  <span class="price-num">{{ card.discountPrice }}</span>
+                  <span class="price-unit">元</span>
+                </div>
+                <!-- 优惠券提示 -->
+                <div v-if="card.hasCoupon && card.couponName" class="card-coupon">
+                  优惠券：{{ card.couponName }}
+                </div>
+              </div>
+              <van-button 
+                type="warning" 
+                size="small" 
+                round
+                class="buy-btn"
+                @click="handleBuy(card)"
+              >
+                购买
+              </van-button>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
   </app-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { showToast } from 'vant'
 import AppLayout from '@/components/AppLayout.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import { getProductList } from '@/api/product'
+import { getUserBenefit } from '@/api/benefit'
+import { formatDateTime } from '@/utils/format'
+import type { Product } from '@/types/product'
+import type { UserBenefit } from '@/types/benefit'
 
-const vipOption = ref('1')
+const loading = ref(false)
+const productList = ref<Product[]>([])
+const userBenefit = ref<UserBenefit | null>(null)
 const cardOption = ref('forever')
 
-const handleBuy = (type: string, price: number) => {
-  console.log('购买:', type, price)
-  // TODO: 调用支付接口
+// VIP 套餐商品
+const vipProduct = computed(() => {
+  return productList.value.find(item => item.productCode.startsWith('VIP'))
+})
+
+// 训练卡商品列表
+const cardProducts = computed(() => {
+  return productList.value.filter(item => item.productCode.startsWith('CARD'))
+})
+
+// VIP 状态文本
+const vipStatusText = computed(() => {
+  if (!userBenefit.value) return '加载中...'
+  
+  if (userBenefit.value.isVip === 1 && userBenefit.value.vipExpireTime) {
+    return formatDateTime(userBenefit.value.vipExpireTime)
+  }
+  
+  return '未开通'
+})
+
+// VIP 状态样式类
+const vipStatusClass = computed(() => {
+  if (!userBenefit.value) return ''
+  
+  if (userBenefit.value.isVip === 1) {
+    // 检查是否过期
+    if (userBenefit.value.vipExpireTime) {
+      const expireDate = new Date(userBenefit.value.vipExpireTime)
+      const now = new Date()
+      return expireDate > now ? 'active' : 'expired'
+    }
+  }
+  
+  return 'expired'
+})
+
+// 获取用户权益信息
+const fetchUserBenefit = async () => {
+  try {
+    const res = await getUserBenefit()
+    userBenefit.value = res.data || res
+    console.log('用户权益信息:', userBenefit.value)
+  } catch (error) {
+    console.error('获取用户权益信息失败:', error)
+    showToast({
+      message: '获取用户权益信息失败',
+      position: 'top'
+    })
+  }
 }
+
+// 获取商品列表
+const fetchProductList = async () => {
+  try {
+    const res = await getProductList()
+    productList.value = res.data || res
+    console.log('商品列表:', productList.value)
+  } catch (error) {
+    console.error('获取商品列表失败:', error)
+    showToast({
+      message: '获取商品列表失败',
+      position: 'top'
+    })
+  }
+}
+
+// 初始化数据
+const initData = async () => {
+  loading.value = true
+  try {
+    await Promise.all([fetchUserBenefit(), fetchProductList()])
+  } finally {
+    loading.value = false
+  }
+}
+
+// 购买商品
+const handleBuy = (product: Product) => {
+  console.log('购买商品:', product)
+  // TODO: 调用支付接口
+  showToast({
+    message: `购买 ${product.productName}`,
+    position: 'top'
+  })
+}
+
+// 组件挂载时初始化数据
+onMounted(() => {
+  initData()
+})
 </script>
 
 <style scoped lang="scss">
@@ -139,6 +233,14 @@ const handleBuy = (type: string, price: number) => {
   padding-bottom: 60px;
   background: #f5f7fa;
   min-height: calc(100vh - 56px);
+}
+
+// 加载状态
+.loading-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
 }
 
 // VIP 卡片
@@ -198,6 +300,10 @@ const handleBuy = (type: string, price: number) => {
         font-size: 16px;
         font-weight: 600;
         color: #fff;
+
+        &.active {
+          color: #4ade80;
+        }
 
         &.expired {
           color: #ffd21e;
@@ -300,6 +406,27 @@ const handleBuy = (type: string, price: number) => {
     line-height: 1.5;
   }
 
+  // 优惠券提示
+  .coupon-tip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fff3e0;
+    border-radius: 6px;
+    margin-top: 12px;
+
+    .van-icon {
+      font-size: 16px;
+      color: #ff9500;
+    }
+
+    span {
+      font-size: 13px;
+      color: #ff9500;
+    }
+  }
+
   .option-item {
     padding: 10px 0;
 
@@ -342,6 +469,12 @@ const handleBuy = (type: string, price: number) => {
           color: #333;
           font-weight: 500;
           margin-bottom: 4px;
+        }
+
+        .card-coupon {
+          font-size: 12px;
+          color: #ff9500;
+          margin-top: 4px;
         }
 
         .card-price {

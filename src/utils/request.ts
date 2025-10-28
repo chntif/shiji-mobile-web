@@ -2,10 +2,10 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { showToast } from 'vant'
 
 // 固定的 clientid
-const CLIENT_ID = 'e5cd7e4891bf95d1d19206ce24a7b32e'
+const CLIENT_ID = '428a8310cd442757ae699df5d894f051'
 
 // 开发阶段 Authorization Token - 可在此处手动设置
-let authToken = ''
+let authToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiJzdHVfdXNlcjoxOTgxOTEyNjgwNTM3Mzg3MDEwIiwicm5TdHIiOiJBQkRTRlYzM0FMYUN1TTY4aFhoVkNEMWNQNERBSHU2aSIsImNsaWVudGlkIjoiNDI4YTgzMTBjZDQ0Mjc1N2FlNjk5ZGY1ZDg5NGYwNTEiLCJleHAiOjE3NjQyMTIyOTIsInRlbmFudElkIjoiMDAwMDAwIiwidXNlcklkIjoxOTgxOTEyNjgwNTM3Mzg3MDEwLCJ1c2VyTmFtZSI6Ind4XzU1NTAxODA4IiwiZGVwdElkIjoxOTY4NjExNjQ4MzUxMzA5ODI1LCJ1c2VyVHlwZSI6InN0dV91c2VyIn0.VFS1mFW-R3ZSlI4pp7xF0xPXegZ6OTSO5Ov0gQsSdgI'
 
 /**
  * 设置 Authorization Token（开发调试用）
@@ -20,6 +20,7 @@ export const setAuthToken = (token: string) => {
  * 获取当前 Authorization Token
  */
 export const getAuthToken = () => {
+    setAuthToken(authToken)
     return authToken
 }
 
@@ -40,7 +41,7 @@ instance.interceptors.request.use(
 
         // 添加 Authorization（如果已设置，格式：Bearer token）
         if (authToken) {
-            config.headers.Authorization = authToken
+            config.headers.Authorization = getAuthToken()
         }
 
         return config
