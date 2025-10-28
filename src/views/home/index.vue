@@ -120,14 +120,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { showToast } from 'vant'
+import { showToast, showLoadingToast, closeToast, showDialog } from 'vant'
 import AppLayout from '@/components/AppLayout.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import { getProductList } from '@/api/product'
 import { getUserBenefit } from '@/api/benefit'
+import { jsapiPay } from '@/api/payment'
 import { formatDateTime } from '@/utils/format'
+import { isWechat, waitForWxJSBridge } from '@/utils/wechat'
 import type { Product } from '@/types/product'
 import type { UserBenefit } from '@/types/benefit'
+import type { WxPayConfig } from '@/types/payment'
+import { PaymentSource } from '@/types/payment'
 
 const loading = ref(false)
 const productList = ref<Product[]>([])
@@ -211,14 +215,137 @@ const initData = async () => {
   }
 }
 
-// 购买商品
-const handleBuy = (product: Product) => {
-  console.log('购买商品:', product)
-  // TODO: 调用支付接口
-  showToast({
-    message: `购买 ${product.productName}`,
-    position: 'top'
+// 调起微信支付
+const invokeWxPay = async (payConfig: WxPayConfig): Promise<void> => {
+  // 检查是否在微信环境
+  if (!isWechat()) {
+    showDialog({
+      title: '提示',
+      message: '请在微信客户端打开'
+    })
+    throw new Error('Not in WeChat')
+  }
+
+  // 等待 WeixinJSBridge 加载完成
+  await waitForWxJSBridge()
+
+  return new Promise((resolve, reject) => {
+    if (typeof window.WeixinJSBridge === 'undefined') {
+      reject(new Error('WeixinJSBridge not found'))
+      return
+    }
+
+    window.WeixinJSBridge.invoke(
+      'getBrandWCPayRequest',
+      payConfig,
+      (res: any) => {
+        if (res.err_msg === 'get_brand_wcpay_request:ok') {
+          // 支付成功
+          resolve()
+        } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+          // 用户取消支付
+          reject(new Error('用户取消支付'))
+        } else {
+          // 支付失败
+          reject(new Error(res.err_msg || '支付失败'))
+        }
+      }
+    )
   })
+}
+
+// 购买商品
+const handleBuy = async (product: Product) => {
+  console.log('购买商品:', product)
+
+  try {
+    // 显示加载提示
+    showLoadingToast({
+      message: '正在创建订单...',
+      forbidClick: true,
+      duration: 0
+    })
+
+    // 调用支付接口
+    const payParams = {
+      productCode: product.productCode,
+      paymentSource: PaymentSource.MP, // 公众号支付
+      // 如果商品有优惠券，传递优惠券ID
+      ...(product.hasCoupon && product.userCouponId
+        ? { userCouponId: product.userCouponId }
+        : {})
+    }
+
+    console.log('支付请求参数:', payParams)
+    const res = await jsapiPay(payParams)
+    const payData = res.data || res
+
+    console.log('支付响应数据:', payData)
+
+    // 检查响应状态
+    if (payData.code !== 'SUCCESS') {
+      closeToast()
+      showToast({
+        message: payData.message || '创建订单失败',
+        position: 'top'
+      })
+      return
+    }
+
+    closeToast()
+
+    // 准备微信支付配置（符合微信 JSAPI 规范）
+    const wxPayConfig: WxPayConfig = {
+      appId: payData.appId,
+      timeStamp: payData.timeStamp, // 注意：S 必须大写
+      nonceStr: payData.nonceStr,
+      package: payData.packageValue,
+      signType: payData.signType,
+      paySign: payData.paySign
+    }
+
+    console.log('调起微信支付:', wxPayConfig)
+
+    // 显示支付中提示
+    showLoadingToast({
+      message: '正在调起支付...',
+      forbidClick: true,
+      duration: 0
+    })
+
+    // 调起微信支付
+    await invokeWxPay(wxPayConfig)
+
+    // 支付成功
+    closeToast()
+    showDialog({
+      title: '支付成功',
+      message: `订单号：${payData.outTradeNo}`,
+      confirmButtonText: '查看订单'
+    }).then(() => {
+      // 跳转到订单页
+      // router.push('/orders')
+      
+      // 刷新用户权益信息
+      fetchUserBenefit()
+    })
+  } catch (error: any) {
+    closeToast()
+    console.error('购买失败:', error)
+
+    const errorMsg = error.message || '支付失败'
+    if (errorMsg === '用户取消支付') {
+      showToast({
+        message: '已取消支付',
+        position: 'top'
+      })
+    } else if (errorMsg !== 'Not in WeChat') {
+      showToast({
+        message: errorMsg,
+        position: 'top'
+      })
+    }
+  }
 }
 
 // 组件挂载时初始化数据

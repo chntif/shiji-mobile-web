@@ -12,3 +12,11 @@ export const getOrderList = (params?: OrderListParams) => {
     return request.get<OrderListResponse>('/app/wechat/pay/list', { params })
 }
 
+/**
+ * 关闭订单
+ * @param outTradeNo 商户订单号
+ */
+export const closeOrder = (outTradeNo: string) => {
+    return request.post(`/app/wechat/pay/close/${outTradeNo}`)
+}
+

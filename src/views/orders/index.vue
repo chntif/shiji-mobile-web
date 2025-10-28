@@ -74,6 +74,16 @@
                 <span>{{ getTimeText(order) }}</span>
                 <span class="time">{{ getTimeValue(order) }}</span>
               </div>
+              <!-- 待支付订单显示取消按钮 -->
+              <van-button
+                v-if="order.orderStatus === OrderStatus.PENDING"
+                size="small"
+                type="default"
+                class="cancel-btn"
+                @click="handleCancelOrder(order)"
+              >
+                取消订单
+              </van-button>
             </div>
           </div>
 
@@ -91,10 +101,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { showToast } from 'vant'
+import { showToast, showDialog, showLoadingToast, closeToast } from 'vant'
 import AppLayout from '@/components/AppLayout.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { getOrderList } from '@/api/order'
+import { getOrderList, closeOrder } from '@/api/order'
 import { formatDateTime } from '@/utils/format'
 import type { Order } from '@/types/order'
 import { OrderStatus } from '@/types/order'
@@ -218,6 +228,57 @@ const onTabChange = () => {
   
   // 加载新数据
   onLoad()
+}
+
+// 取消订单
+const handleCancelOrder = async (order: Order) => {
+  try {
+    // 弹出确认对话框
+    await showDialog({
+      title: '确认取消',
+      message: `确定要取消订单吗？\n订单号：${order.outTradeNo}`,
+      confirmButtonText: '确认取消',
+      cancelButtonText: '我再想想',
+      confirmButtonColor: '#ff6b6b'
+    })
+
+    // 显示加载提示
+    showLoadingToast({
+      message: '取消中...',
+      forbidClick: true,
+      duration: 0
+    })
+    console.log('取消订单:', order.outTradeNo)
+    // 调用取消订单接口
+    await closeOrder(order.outTradeNo)
+
+    closeToast()
+
+    // 显示成功提示
+    showToast({
+      message: '订单已取消',
+      position: 'top',
+      duration: 2000
+    })
+
+    // 刷新订单列表
+    setTimeout(() => {
+      onRefresh()
+    }, 500)
+  } catch (error: any) {
+    closeToast()
+    
+    // 用户点击了取消按钮，不显示错误
+    if (error === 'cancel') {
+      return
+    }
+
+    console.error('取消订单失败:', error)
+    showToast({
+      message: error.message || '取消订单失败',
+      position: 'top'
+    })
+  }
 }
 </script>
 
@@ -366,12 +427,16 @@ const onTabChange = () => {
   .order-footer {
     padding-top: 12px;
     border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
     .time-info {
       display: flex;
       align-items: center;
       font-size: 13px;
       color: #999;
+      flex: 1;
 
       .van-icon {
         margin-right: 4px;
@@ -381,6 +446,16 @@ const onTabChange = () => {
       .time {
         margin-left: auto;
         color: #666;
+      }
+    }
+
+    .cancel-btn {
+      margin-left: 12px;
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+      
+      &:active {
+        background: #fff5f5;
       }
     }
   }
