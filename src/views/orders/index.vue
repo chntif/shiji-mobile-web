@@ -8,7 +8,8 @@
         v-model:active="activeTab" 
         @change="onTabChange"
         sticky
-        :offset-top="56"
+        :offset-top="stickyOffset"
+        background="#fff"
       >
         <van-tab title="全部" :name="-1"></van-tab>
         <van-tab title="待支付" :name="OrderStatus.PENDING"></van-tab>
@@ -24,6 +25,8 @@
         loosing-text="释放刷新"
         loading-text="加载中..."
       >
+        <!-- 回到顶部按钮（向下滚动一定距离显示） -->
+        <van-back-top right="16" bottom="80" :offset="200" />
         <van-list
           v-model:loading="loading"
           :finished="finished"
@@ -74,16 +77,25 @@
                 <span>{{ getTimeText(order) }}</span>
                 <span class="time">{{ getTimeValue(order) }}</span>
               </div>
-              <!-- 待支付订单显示取消按钮 -->
-              <van-button
-                v-if="order.orderStatus === OrderStatus.PENDING"
-                size="small"
-                type="default"
-                class="cancel-btn"
-                @click="handleCancelOrder(order)"
-              >
-                取消订单
-              </van-button>
+              <!-- 待支付订单显示取消/去支付按钮 -->
+              <div v-if="order.orderStatus === OrderStatus.PENDING" class="action-buttons">
+                <van-button
+                  size="small"
+                  type="default"
+                  class="cancel-btn"
+                  @click="handleCancelOrder(order)"
+                >
+                  取消订单
+                </van-button>
+                <van-button
+                  size="small"
+                  type="primary"
+                  class="pay-btn"
+                  @click="handleContinuePay(order)"
+                >
+                  去支付
+                </van-button>
+              </div>
             </div>
           </div>
 
@@ -101,13 +113,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { showToast, showConfirmDialog, showLoadingToast, closeToast } from 'vant'
+import { showToast, showConfirmDialog, showLoadingToast, closeToast, showDialog } from 'vant'
 import AppLayout from '@/components/AppLayout.vue'
 import AppHeader from '@/components/AppHeader.vue'
-import { getOrderList, closeOrder } from '@/api/order'
+import { getOrderList, closeOrder, continuePay } from '@/api/order'
 import { formatDateTime } from '@/utils/format'
+import { isWechat, waitForWxJSBridge } from '@/utils/wechat'
 import type { Order } from '@/types/order'
 import { OrderStatus } from '@/types/order'
+import type { WxPayConfig } from '@/types/payment'
 
 const orderList = ref<Order[]>([])
 const loading = ref(false)
@@ -117,6 +131,8 @@ const pageNum = ref(1)
 const pageSize = 10
 const total = ref(0)
 const activeTab = ref<number>(-1) // -1 表示全部
+// 顶部自定义导航栏高度为 56px，如后续调整，请同步修改此偏移
+const stickyOffset = 56
 
 // 获取订单状态样式类
 const getOrderStatusClass = (status: OrderStatus) => {
@@ -280,6 +296,115 @@ const handleCancelOrder = async (order: Order) => {
     })
   }
 }
+
+// 调用微信支付
+const invokeWxPay = async (payConfig: WxPayConfig): Promise<void> => {
+  // 检查是否在微信环境
+  if (!isWechat()) {
+    showDialog({
+      title: '提示',
+      message: '请在微信客户端打开'
+    })
+    throw new Error('Not in WeChat')
+  }
+
+  // 等待 WeixinJSBridge 加载完成
+  await waitForWxJSBridge()
+
+  return new Promise((resolve, reject) => {
+    if (typeof window.WeixinJSBridge === 'undefined') {
+      reject(new Error('WeixinJSBridge not found'))
+      return
+    }
+
+    window.WeixinJSBridge.invoke(
+      'getBrandWCPayRequest',
+      payConfig,
+      (res: any) => {
+        if (res.err_msg === 'get_brand_wcpay_request:ok') {
+          // 支付成功
+          resolve()
+        } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+          // 用户取消支付
+          reject(new Error('用户取消支付'))
+        } else {
+          // 支付失败
+          reject(new Error(res.err_msg || '支付失败'))
+        }
+      }
+    )
+  })
+}
+
+// 继续支付（去支付）
+const handleContinuePay = async (order: Order) => {
+  try {
+    // 显示加载提示
+    showLoadingToast({
+      message: '正在拉起支付...',
+      forbidClick: true,
+      duration: 0
+    })
+
+    // 调用继续支付接口
+    const res = await continuePay(order.outTradeNo)
+    const payData = res.data || res
+
+    console.log('继续支付响应数据:', payData)
+
+    // 检查响应状态
+    if (payData.code !== 'SUCCESS') {
+      closeToast()
+      showToast({
+        message: payData.message || '获取支付参数失败',
+        position: 'top'
+      })
+      return
+    }
+
+    // 准备微信支付配置（符合微信 JSAPI 规范）
+    const wxPayConfig: WxPayConfig = {
+      appId: payData.appId,
+      timeStamp: payData.timeStamp, // 注意：S 必须大写
+      nonceStr: payData.nonceStr,
+      package: payData.packageValue,
+      signType: payData.signType,
+      paySign: payData.paySign
+    }
+
+    console.log('调起微信支付:', wxPayConfig)
+
+    // 调起微信支付
+    await invokeWxPay(wxPayConfig)
+
+    // 支付成功
+    closeToast()
+    showDialog({
+      title: '支付成功',
+      message: `订单号：${payData.outTradeNo}`,
+      confirmButtonText: '确定'
+    }).then(() => {
+      // 刷新订单列表
+      onRefresh()
+    })
+  } catch (error: any) {
+    closeToast()
+    
+    const errorMsg = error.message || '支付失败'
+    if (errorMsg === '用户取消支付') {
+      showToast({
+        message: '已取消支付',
+        position: 'top'
+      })
+    } else {
+      console.error('支付失败:', error)
+      showToast({
+        message: errorMsg,
+        position: 'top'
+      })
+    }
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -427,16 +552,13 @@ const handleCancelOrder = async (order: Order) => {
   .order-footer {
     padding-top: 12px;
     border-top: 1px solid #f0f0f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 
     .time-info {
       display: flex;
       align-items: center;
       font-size: 13px;
       color: #999;
-      flex: 1;
+      margin-bottom: 12px;
 
       .van-icon {
         margin-right: 4px;
@@ -444,18 +566,33 @@ const handleCancelOrder = async (order: Order) => {
       }
 
       .time {
-        margin-left: auto;
+        margin-left: 8px;
         color: #666;
       }
     }
 
-    .cancel-btn {
-      margin-left: 12px;
-      border-color: #ff6b6b;
-      color: #ff6b6b;
-      
-      &:active {
-        background: #fff5f5;
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+
+      .cancel-btn {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+        
+        &:active {
+          background: #fff5f5;
+        }
+      }
+
+      .pay-btn {
+        background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        border: none;
+        
+        &:active {
+          opacity: 0.8;
+        }
       }
     }
   }

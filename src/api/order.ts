@@ -20,3 +20,11 @@ export const closeOrder = (outTradeNo: string) => {
     return request.post(`/app/wechat/pay/close/${outTradeNo}`)
 }
 
+/**
+ * 继续支付（重新拉起支付）
+ * @param outTradeNo 商户订单号
+ */
+export const continuePay = (outTradeNo: string) => {
+    return request.post(`/app/wechat/pay/continue-pay/${outTradeNo}`)
+}
+

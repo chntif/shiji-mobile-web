@@ -2,6 +2,9 @@
   <div class="app-header-wrapper">
     <!-- 自定义顶部栏 -->
     <div class="custom-header">
+      <div class="header-left" @click="handleHome">
+        <van-icon name="home-o" class="home-icon" />
+      </div>
       <div class="header-title">{{ title }}</div>
       <div class="header-menu" @click="showMenu = true">
         <div class="menu-icon">
@@ -100,13 +103,27 @@ const handleAuth = () => {
     z-index: 999;
     box-shadow: 0 2px 8px rgba(0, 180, 148, 0.2);
 
+    .header-left {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      .home-icon {
+        font-size: 22px;
+        color: #fff;
+      }
+    }
+
     .header-title {
       font-size: 18px;
       font-weight: 600;
       color: #fff;
       flex: 1;
       text-align: center;
-      margin-left: 40px; // 平衡右侧菜单按钮的位置
+      margin-left: 0;
     }
 
     .header-menu {
