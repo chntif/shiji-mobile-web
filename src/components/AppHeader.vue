@@ -19,11 +19,7 @@
     <div class="header-placeholder"></div>
 
     <!-- 遮罩层 -->
-    <div 
-      v-if="showMenu" 
-      class="menu-overlay" 
-      @click="showMenu = false"
-    ></div>
+    <div v-if="showMenu" class="menu-overlay" @click="showMenu = false"></div>
 
     <!-- 右上角菜单 -->
     <transition name="menu-fade">
@@ -48,8 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { showDialog, showToast } from 'vant'
+import 'vant/es/dialog/style'
+import { useUserStore } from '@/stores/user'
+import { clearAuthToken } from '@/utils/request'
+import { redirectToWechatAuth, isWechat } from '@/utils/wechat'
 
 defineProps<{
   title: string
@@ -57,8 +58,10 @@ defineProps<{
 
 const router = useRouter()
 const showMenu = ref(false)
-// TODO: 这里应该从状态管理（Pinia）中获取登录状态
-const isLogin = ref(false)
+const userStore = useUserStore()
+
+// 从 Pinia store 获取登录状态
+const isLogin = computed(() => userStore.isLogin())
 
 // 跳转到商品购买页（主页）
 const handleHome = () => {
@@ -75,19 +78,52 @@ const handleOrders = () => {
 // 登录/退出
 const handleAuth = () => {
   showMenu.value = false
+
   if (isLogin.value) {
-    // TODO: 退出登录逻辑
-    console.log('退出登录')
-    isLogin.value = false
+    // 退出登录
+    showDialog({
+      title: '提示',
+      message: '确定要退出登录吗？',
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      showCancelButton: true
+    })
+      .then(() => {
+        // 确认退出
+        userStore.clearToken()
+        clearAuthToken()
+
+        showToast({
+          message: '已退出登录',
+          position: 'top'
+        })
+
+        // 跳转到首页
+        router.push('/')
+      })
+      .catch(() => {
+        // 取消退出
+        console.log('取消退出')
+      })
   } else {
-    // TODO: 跳转登录页或打开登录弹窗
-    console.log('登录')
+    // 跳转到微信授权登录
+    if (!isWechat()) {
+      showToast({
+        message: '请在微信中打开',
+        position: 'top'
+      })
+      return
+    }
+
+    // 跳转到微信授权页面
+    redirectToWechatAuth()
   }
 }
 </script>
 
 <style scoped lang="scss">
 .app-header-wrapper {
+
   // 自定义顶部栏
   .custom-header {
     position: fixed;
@@ -235,4 +271,3 @@ const handleAuth = () => {
   transform: translateY(-10px);
 }
 </style>
-

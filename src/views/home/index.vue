@@ -110,12 +110,18 @@ import AppHeader from '@/components/AppHeader.vue'
 import { getProductList } from '@/api/product'
 import { getUserBenefit } from '@/api/benefit'
 import { jsapiPay } from '@/api/payment'
+import { loginByWechatCode } from '@/api/auth'
 import { formatDateTime } from '@/utils/format'
-import { isWechat, waitForWxJSBridge } from '@/utils/wechat'
+import { isWechat, waitForWxJSBridge, getWechatCodeFromUrl, clearWechatAuthParams, redirectToWechatAuth } from '@/utils/wechat'
+import { setAuthToken } from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 import type { Product } from '@/types/product'
 import type { UserBenefit } from '@/types/benefit'
 import type { WxPayConfig } from '@/types/payment'
 import { PaymentSource } from '@/types/payment'
+
+// 用户状态管理
+const userStore = useUserStore()
 
 const loading = ref(false)
 const productList = ref<Product[]>([])
@@ -329,9 +335,102 @@ const handleBuy = async (product: Product) => {
   }
 }
 
-// 组件挂载时初始化数据
+/**
+ * 使用微信 code 登录
+ */
+const loginWithCode = async (code: string) => {
+  try {
+    showLoadingToast({
+      message: '正在登录...',
+      forbidClick: true,
+      duration: 0
+    })
+
+    console.log('使用 code 登录:', code)
+
+    // 调用登录接口
+    const response = await loginByWechatCode(code)
+
+    console.log('登录响应:', response)
+
+    // 保存 token 到 localStorage（通过 request.ts 的 setAuthToken）
+    if (response.access_token) {
+      setAuthToken(response.access_token)
+      // 同时更新 Pinia store
+      userStore.setToken(response.access_token)
+
+      closeToast()
+      showToast({
+        message: '登录成功',
+        position: 'top'
+      })
+
+      // 清除 URL 中的 code 参数（避免刷新重复使用）
+      clearWechatAuthParams()
+
+      // 登录成功后加载数据
+      initData()
+    } else {
+      closeToast()
+      showToast({
+        message: '登录失败，请重试',
+        position: 'top'
+      })
+    }
+  } catch (error: any) {
+    closeToast()
+    console.error('登录失败:', error)
+    showToast({
+      message: error.msg || '登录失败，请重试',
+      position: 'top'
+    })
+  }
+}
+
+/**
+ * 检查 URL 中是否有微信授权 code 并自动登录
+ */
+const checkAuthCode = () => {
+  // 如果已经登录，不需要再次登录
+  if (userStore.isLogin()) {
+    console.log('用户已登录')
+    return
+  }
+
+  // 尝试从 URL 获取 code
+  const code = getWechatCodeFromUrl()
+
+  if (code) {
+    // URL 中有 code，执行登录
+    console.log('从 URL 获取到 code:', code)
+    loginWithCode(code)
+  } else {
+    // URL 中没有 code，需要跳转到微信授权页面
+    console.log('未登录且无授权码，准备跳转到微信授权页面')
+
+    // 检查是否在微信环境
+    if (!isWechat()) {
+      showToast({
+        message: '请在微信中打开',
+        position: 'top'
+      })
+      return
+    }
+
+    // 跳转到微信授权页面（使用当前页面作为回调地址）
+    redirectToWechatAuth()
+  }
+}
+
+// 组件挂载时检查授权码并初始化数据
 onMounted(() => {
-  initData()
+  // 先检查是否需要登录
+  checkAuthCode()
+
+  // 如果已经登录，直接加载数据
+  if (userStore.isLogin()) {
+    initData()
+  }
 })
 </script>
 

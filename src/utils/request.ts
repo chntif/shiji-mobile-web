@@ -4,24 +4,41 @@ import { showToast } from 'vant'
 // 固定的 clientid
 const CLIENT_ID = '428a8310cd442757ae699df5d894f051'
 
-// 开发阶段 Authorization Token - 可在此处手动设置
-let authToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiJzdHVfdXNlcjoxOTgxOTg2OTc3MDY2OTA1NjAxIiwicm5TdHIiOiJicFpPY2dyaENZR1d5TnJpSGc2QUowRzdoUE42c3VqWiIsImNsaWVudGlkIjoiNDI4YTgzMTBjZDQ0Mjc1N2FlNjk5ZGY1ZDg5NGYwNTEiLCJleHAiOjE3NjQyNDE0NjMsInRlbmFudElkIjoiMDAwMDAwIiwidXNlcklkIjoxOTgxOTg2OTc3MDY2OTA1NjAxLCJ1c2VyTmFtZSI6Ind4Xzc3MjQzMzg0IiwiZGVwdElkIjoxOTY4NjExNjQ4MzUxMzA5ODI1LCJ1c2VyVHlwZSI6InN0dV91c2VyIn0.x07GDHF3KD25s13IWkeNKUVlTsENsYe47UyGdkynrQ4'
-
-/**
- * 设置 Authorization Token（开发调试用）
- * @param token - 认证令牌（会自动添加 "Bearer " 前缀，如果已有则不重复添加）
- */
-export const setAuthToken = (token: string) => {
-    // 如果 token 已经包含 Bearer 前缀，直接使用；否则添加前缀
-    authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`
-}
+// Token 存储 key
+const TOKEN_KEY = 'user_token'
 
 /**
  * 获取当前 Authorization Token
+ * 优先从 localStorage 读取持久化的 token
  */
-export const getAuthToken = () => {
-    setAuthToken(authToken)
-    return authToken
+export const getAuthToken = (): string => {
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (token) {
+        // 如果 token 已经包含 Bearer 前缀，直接使用；否则添加前缀
+        return token.startsWith('Bearer ') ? token : `Bearer ${token}`
+    }
+    return ''
+}
+
+/**
+ * 设置 Authorization Token 并持久化到 localStorage
+ * @param token - 认证令牌（会自动添加 "Bearer " 前缀，如果已有则不重复添加）
+ */
+export const setAuthToken = (token: string) => {
+    if (token) {
+        // 如果 token 已经包含 Bearer 前缀，直接使用；否则添加前缀
+        const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`
+        localStorage.setItem(TOKEN_KEY, formattedToken)
+    } else {
+        localStorage.removeItem(TOKEN_KEY)
+    }
+}
+
+/**
+ * 清除 Authorization Token
+ */
+export const clearAuthToken = () => {
+    localStorage.removeItem(TOKEN_KEY)
 }
 
 // 创建 axios 实例
@@ -39,9 +56,10 @@ instance.interceptors.request.use(
         // 添加固定的 clientid
         config.headers.clientid = CLIENT_ID
 
-        // 添加 Authorization（如果已设置，格式：Bearer token）
-        if (authToken) {
-            config.headers.Authorization = getAuthToken()
+        // 添加 Authorization（从 localStorage 读取持久化的 token）
+        const token = getAuthToken()
+        if (token) {
+            config.headers.Authorization = token
         }
 
         return config
@@ -72,14 +90,17 @@ instance.interceptors.response.use(
     (error) => {
         // HTTP 错误处理
         let message = '网络请求失败'
+        let shouldRedirectToAuth = false
 
         if (error.response) {
             switch (error.response.status) {
                 case 401:
                     message = '未授权，请重新登录'
+                    shouldRedirectToAuth = true
                     break
                 case 403:
-                    message = '拒绝访问'
+                    message = '权限不足，请重新授权'
+                    shouldRedirectToAuth = true
                     break
                 case 404:
                     message = '请求地址不存在'
@@ -102,6 +123,21 @@ instance.interceptors.response.use(
             message,
             position: 'top'
         })
+
+        // 如果是权限问题，清除 token 并跳转到授权页面
+        if (shouldRedirectToAuth) {
+            clearAuthToken()
+
+            // 延迟跳转，让用户看到提示信息
+            setTimeout(() => {
+                // 动态导入避免循环依赖
+                import('@/utils/wechat').then(({ redirectToWechatAuth, isWechat }) => {
+                    if (isWechat()) {
+                        redirectToWechatAuth()
+                    }
+                })
+            }, 1500)
+        }
 
         return Promise.reject(error)
     }

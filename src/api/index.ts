@@ -8,4 +8,5 @@ export * from './product'
 export * from './benefit'
 export * from './order'
 export * from './payment'
+export * from './auth'
 
