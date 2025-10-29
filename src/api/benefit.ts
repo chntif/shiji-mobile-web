@@ -9,6 +9,6 @@ import type { UserBenefit } from '@/types/benefit'
  * 获取用户权益信息
  */
 export const getUserBenefit = () => {
-    return request.get<UserBenefit>('/app/benefit/info')
+    return request.get('/app/benefit/info')
 }
 

@@ -1,7 +1,7 @@
 <template>
   <app-layout>
     <app-header title="时机" />
-    
+
     <div class="home-page">
       <!-- 加载状态 -->
       <van-loading v-if="loading" class="loading-center" vertical>
@@ -16,7 +16,7 @@
             <span class="vip-title">VIP会员特权</span>
           </div>
           <div class="vip-desc">解锁全部功能，成为"offer收割机"</div>
-          
+
           <div class="vip-info">
             <div class="vip-info-item">
               <span class="label">VIP会员到期时间</span>
@@ -48,13 +48,7 @@
               <span class="price-num">{{ vipProduct.discountPrice }}</span>
               <span class="price-unit">元</span>
             </div>
-            <van-button 
-              type="primary" 
-              size="small" 
-              round
-              class="buy-btn"
-              @click="handleBuy(vipProduct)"
-            >
+            <van-button type="primary" size="small" round class="buy-btn" @click="handleBuy(vipProduct)">
               购买
             </van-button>
           </div>
@@ -73,7 +67,7 @@
           <div class="product-header-simple">
             <div class="product-title">永久训练卡</div>
           </div>
-          
+
           <div class="product-desc">
             使用训练卡参与模拟面试、优化简历和模拟训练
           </div>
@@ -85,11 +79,7 @@
           </van-radio-group>
 
           <div class="card-items">
-            <div 
-              v-for="card in cardProducts" 
-              :key="card.productCode" 
-              class="card-item"
-            >
+            <div v-for="card in cardProducts" :key="card.productCode" class="card-item">
               <div class="card-item-info">
                 <div class="card-name">{{ card.productName }}</div>
                 <div class="card-price">
@@ -101,13 +91,7 @@
                   优惠券：{{ card.couponName }}
                 </div>
               </div>
-              <van-button 
-                type="warning" 
-                size="small" 
-                round
-                class="buy-btn"
-                @click="handleBuy(card)"
-              >
+              <van-button type="warning" size="small" round class="buy-btn" @click="handleBuy(card)">
                 购买
               </van-button>
             </div>
@@ -151,18 +135,18 @@ const cardProducts = computed(() => {
 // VIP 状态文本
 const vipStatusText = computed(() => {
   if (!userBenefit.value) return '加载中...'
-  
+
   if (userBenefit.value.isVip === 1 && userBenefit.value.vipExpireTime) {
     return formatDateTime(userBenefit.value.vipExpireTime)
   }
-  
+
   return '未开通'
 })
 
 // VIP 状态样式类
 const vipStatusClass = computed(() => {
   if (!userBenefit.value) return ''
-  
+
   if (userBenefit.value.isVip === 1) {
     // 检查是否过期
     if (userBenefit.value.vipExpireTime) {
@@ -171,7 +155,7 @@ const vipStatusClass = computed(() => {
       return expireDate > now ? 'active' : 'expired'
     }
   }
-  
+
   return 'expired'
 })
 
@@ -628,4 +612,3 @@ onMounted(() => {
   }
 }
 </style>
-

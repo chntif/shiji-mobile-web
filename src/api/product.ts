@@ -9,6 +9,6 @@ import type { Product } from '@/types/product'
  * 获取商品列表
  */
 export const getProductList = () => {
-    return request.get<Product[]>('/app/product/list')
+    return request.get('/app/product/list')
 }
 

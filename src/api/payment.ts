@@ -9,6 +9,6 @@ import type { JsapiPayParams, JsapiPayResponse } from '@/types/payment'
  * JSAPI 支付接口
  */
 export const jsapiPay = (data: JsapiPayParams) => {
-    return request.post<JsapiPayResponse>('/app/wechat/pay/jsapi', data)
+    return request.post('/app/wechat/pay/jsapi', data)
 }
 
