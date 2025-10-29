@@ -145,9 +145,19 @@ const fetchOrders = async (isRefresh = false) => {
     total.value = data.total || 0
 
     if (isRefresh) {
+      // 刷新时直接替换数据
       orderList.value = orders
     } else {
-      orderList.value = [...orderList.value, ...orders]
+      // 加载更多时，根据 outTradeNo 去重
+      const existingTradeNos = new Set(orderList.value.map(order => order.outTradeNo))
+      const newOrders = orders.filter(order => !existingTradeNos.has(order.outTradeNo))
+
+      if (newOrders.length > 0) {
+        orderList.value = [...orderList.value, ...newOrders]
+        console.log(`去重后新增 ${newOrders.length} 条订单`)
+      } else {
+        console.log('没有新订单数据，可能存在重复')
+      }
     }
 
     // 判断是否还有更多数据
@@ -190,6 +200,7 @@ const onLoad = async () => {
 // 下拉刷新
 const onRefresh = async () => {
   // 重置状态
+  orderList.value = [] // 清空当前订单数据
   pageNum.value = 1
   finished.value = false
   loading.value = false // 重置加载状态
