@@ -50,7 +50,6 @@ import { showDialog, showToast } from 'vant'
 import 'vant/es/dialog/style'
 import { useUserStore } from '@/stores/user'
 import { clearAuthToken } from '@/utils/request'
-import { redirectToWechatAuth, isWechat } from '@/utils/wechat'
 
 defineProps<{
   title: string
@@ -98,25 +97,16 @@ const handleAuth = () => {
           position: 'top'
         })
 
-        // 跳转到首页
-        router.push('/')
+        // 跳转到授权页面
+        router.push('/auth')
       })
       .catch(() => {
         // 取消退出
         console.log('取消退出')
       })
   } else {
-    // 跳转到微信授权登录
-    if (!isWechat()) {
-      showToast({
-        message: '请在微信中打开',
-        position: 'top'
-      })
-      return
-    }
-
-    // 跳转到微信授权页面
-    redirectToWechatAuth()
+    // 跳转到授权页面进行登录
+    router.push('/auth')
   }
 }
 </script>
