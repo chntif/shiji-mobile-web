@@ -1,16 +1,10 @@
 <template>
   <app-layout>
     <app-header title="我的订单" />
-    
+
     <div class="orders-page">
       <!-- 订单状态筛选 -->
-      <van-tabs 
-        v-model:active="activeTab" 
-        @change="onTabChange"
-        sticky
-        :offset-top="stickyOffset"
-        background="#fff"
-      >
+      <van-tabs v-model:active="activeTab" @change="onTabChange" background="#fff">
         <van-tab title="全部" :name="-1"></van-tab>
         <van-tab title="待支付" :name="OrderStatus.PENDING"></van-tab>
         <van-tab title="已支付" :name="OrderStatus.PAID"></van-tab>
@@ -18,26 +12,12 @@
         <van-tab title="已退款" :name="OrderStatus.REFUNDED"></van-tab>
       </van-tabs>
 
-      <van-pull-refresh 
-        v-model="refreshing" 
-        @refresh="onRefresh"
-        pulling-text="下拉刷新"
-        loosing-text="释放刷新"
-        loading-text="加载中..."
-      >
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh" pulling-text="下拉刷新" loosing-text="释放刷新"
+        loading-text="加载中...">
         <!-- 回到顶部按钮（向下滚动一定距离显示） -->
         <van-back-top right="16" bottom="80" :offset="200" />
-        <van-list
-          v-model:loading="loading"
-          :finished="finished"
-          finished-text="没有更多了"
-          @load="onLoad"
-        >
-          <div 
-            v-for="order in orderList" 
-            :key="order.outTradeNo" 
-            class="order-card"
-          >
+        <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
+          <div v-for="order in orderList" :key="order.outTradeNo" class="order-card">
             <div class="order-header">
               <span class="order-title">{{ order.productName }}</span>
               <span :class="['order-status', getOrderStatusClass(order.orderStatus)]">
@@ -59,15 +39,15 @@
             <div class="order-content">
               <div class="price-row">
                 <span class="label">订单金额：</span>
-                <span class="value">¥{{ order.originalAmount }}</span>
+                <span class="value">¥{{ order.originalAmount }}元</span>
               </div>
               <div v-if="order.couponDiscount" class="price-row">
                 <span class="label">优惠金额：</span>
-                <span class="value discount">-¥{{ order.couponDiscount }}</span>
+                <span class="value discount">-¥{{ order.couponDiscount }}元</span>
               </div>
               <div class="price-row">
                 <span class="label">实付金额：</span>
-                <span class="value final">¥{{ order.totalAmount }}</span>
+                <span class="value final">¥{{ order.totalAmount }}元</span>
               </div>
             </div>
 
@@ -79,20 +59,10 @@
               </div>
               <!-- 待支付订单显示取消/去支付按钮 -->
               <div v-if="order.orderStatus === OrderStatus.PENDING" class="action-buttons">
-                <van-button
-                  size="small"
-                  type="default"
-                  class="cancel-btn"
-                  @click="handleCancelOrder(order)"
-                >
+                <van-button size="small" type="default" class="cancel-btn" @click="handleCancelOrder(order)">
                   取消订单
                 </van-button>
-                <van-button
-                  size="small"
-                  type="primary"
-                  class="pay-btn"
-                  @click="handleContinuePay(order)"
-                >
+                <van-button size="small" type="primary" class="pay-btn" @click="handleContinuePay(order)">
                   去支付
                 </van-button>
               </div>
@@ -100,11 +70,7 @@
           </div>
 
           <!-- 空状态 -->
-          <van-empty
-            v-if="!loading && !refreshing && orderList.length === 0"
-            description="暂无订单"
-            image="search"
-          />
+          <van-empty v-if="!loading && !refreshing && orderList.length === 0" description="暂无订单" image="search" />
         </van-list>
       </van-pull-refresh>
     </div>
@@ -131,8 +97,6 @@ const pageNum = ref(1)
 const pageSize = 10
 const total = ref(0)
 const activeTab = ref<number>(-1) // -1 表示全部
-// 顶部自定义导航栏高度为 56px，如后续调整，请同步修改此偏移
-const stickyOffset = 56
 
 // 获取订单状态样式类
 const getOrderStatusClass = (status: OrderStatus) => {
@@ -175,8 +139,8 @@ const fetchOrders = async (isRefresh = false) => {
     }
 
     const res = await getOrderList(params)
-    
-    const data = res.data || res
+
+    const data = res
     const orders = data.rows || []
     total.value = data.total || 0
 
@@ -208,6 +172,12 @@ const fetchOrders = async (isRefresh = false) => {
 
 // 加载更多
 const onLoad = async () => {
+  // 如果正在刷新，不执行加载更多
+  if (refreshing.value) {
+    loading.value = false
+    return
+  }
+
   loading.value = true
   try {
     await fetchOrders(false)
@@ -219,16 +189,14 @@ const onLoad = async () => {
 
 // 下拉刷新
 const onRefresh = async () => {
+  // 重置状态
   pageNum.value = 1
   finished.value = false
+  loading.value = false // 重置加载状态
+
   try {
     await fetchOrders(true)
     pageNum.value = 2 // 刷新后页码从 2 开始
-    showToast({
-      message: '刷新成功',
-      position: 'top',
-      duration: 1500
-    })
   } finally {
     refreshing.value = false
   }
@@ -241,7 +209,7 @@ const onTabChange = () => {
   pageNum.value = 1
   finished.value = false
   loading.value = false
-  
+
   // 加载新数据
   onLoad()
 }
@@ -252,7 +220,7 @@ const handleCancelOrder = async (order: Order) => {
     // 弹出确认对话框（showConfirmDialog 自动挂载到 body）
     await showConfirmDialog({
       title: '确认取消',
-      message: `确定要取消订单吗？\n订单号：${order.outTradeNo}`,
+      message: `确定要取消订单吗？`,
       confirmButtonText: '确认取消',
       cancelButtonText: '我再想想',
       confirmButtonColor: '#ff6b6b',
@@ -283,7 +251,7 @@ const handleCancelOrder = async (order: Order) => {
     }, 500)
   } catch (error: any) {
     closeToast()
-    
+
     // 用户点击了取消按钮，不显示错误
     if (error === 'cancel') {
       return
@@ -294,6 +262,11 @@ const handleCancelOrder = async (order: Order) => {
       message: error.message || '取消订单失败',
       position: 'top'
     })
+
+    // 失败后也刷新订单列表，获取最新状态
+    setTimeout(() => {
+      onRefresh()
+    }, 500)
   }
 }
 
@@ -389,7 +362,7 @@ const handleContinuePay = async (order: Order) => {
     })
   } catch (error: any) {
     closeToast()
-    
+
     const errorMsg = error.message || '支付失败'
     if (errorMsg === '用户取消支付') {
       showToast({
@@ -403,18 +376,25 @@ const handleContinuePay = async (order: Order) => {
         position: 'top'
       })
     }
+
+    // 失败后也刷新订单列表，获取最新状态
+    setTimeout(() => {
+      onRefresh()
+    }, 500)
   }
 }
 </script>
 
 <style scoped lang="scss">
 .orders-page {
-  min-height: calc(100vh - 56px);
+  // min-height: calc(100vh - 56px);
   background: #f5f7fa;
 
   // Tabs 样式
   :deep(.van-tabs) {
-    background: #fff;
+    position: sticky;
+    top: 56px;
+    z-index: 100;
     margin-bottom: 12px;
 
     .van-tab {
@@ -472,7 +452,7 @@ const handleContinuePay = async (order: Order) => {
       font-size: 13px;
       padding: 4px 12px;
       border-radius: 12px;
-      
+
       &.completed {
         background: #e8f8f5;
         color: #00b894;
@@ -580,7 +560,7 @@ const handleContinuePay = async (order: Order) => {
       .cancel-btn {
         border-color: #ff6b6b;
         color: #ff6b6b;
-        
+
         &:active {
           background: #fff5f5;
         }
@@ -589,7 +569,7 @@ const handleContinuePay = async (order: Order) => {
       .pay-btn {
         background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
         border: none;
-        
+
         &:active {
           opacity: 0.8;
         }
@@ -611,4 +591,3 @@ const handleContinuePay = async (order: Order) => {
   }
 }
 </style>
-

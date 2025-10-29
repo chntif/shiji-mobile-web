@@ -318,17 +318,14 @@ const handleBuy = async (product: Product) => {
 
     // 支付成功
     closeToast()
-    showDialog({
-      title: '支付成功',
-      message: `订单号：${payData.outTradeNo}`,
-      confirmButtonText: '查看订单'
-    }).then(() => {
-      // 跳转到订单页
-      // router.push('/orders')
-      
-      // 刷新用户权益信息
-      fetchUserBenefit()
+    showToast({
+      message: `${product.productName} 购买成功`,
+      position: 'top',
+      duration: 2000
     })
+
+    // 刷新用户权益信息
+    fetchUserBenefit()
   } catch (error: any) {
     closeToast()
     console.error('购买失败:', error)
