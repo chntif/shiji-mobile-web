@@ -35,12 +35,18 @@ export interface LoginResponse {
  * @param xcxCode 微信授权码
  */
 export const loginByWechatCode = (xcxCode: string) => {
-    return request.post<LoginResponse>('/auth/login', {
-        clientId: '428a8310cd442757ae699df5d894f051',
-        grantType: 'xcx',
-        tenantId: '00000',
-        appid: 'wxb4c306a14fdec381',
-        xcxCode
-    })
+    return request.post<LoginResponse>(
+        '/auth/login',
+        {
+            clientId: '428a8310cd442757ae699df5d894f051',
+            grantType: 'xcx',
+            tenantId: '000000',
+            appid: 'wxb4c306a14fdec381',
+            xcxCode
+        },
+        {
+            isEncrypt: true // 启用加密
+        }
+    )
 }
 

@@ -156,6 +156,7 @@ const checkAuthStatus = () => {
 
     // 检查 URL 中是否有 code
     const code = getWechatCodeFromUrl()
+    // const code = '0819M61w3uVPU53UWo3w3TPehO39M61u'
 
     if (code) {
         // 有 code，执行登录

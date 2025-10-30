@@ -14,13 +14,7 @@ const router = createRouter({
       path: '/orders',
       name: 'orders',
       component: () => import('../views/orders/index.vue'),
-      meta: { requiresAuth: true } // 需要登录
-    },
-    {
-      path: '/test',
-      name: 'test',
-      component: () => import('../views/test/index.vue'),
-      meta: { requiresAuth: true } // 需要登录
+      meta: { requiresAuth: false } // 需要登录
     },
     {
       path: '/auth',
