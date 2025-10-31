@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const base = '/frontend/'
 
   return {
-    // base, // 设置基础路径
+    base, // 设置基础路径
 
     plugins: [
       vue(),
@@ -32,10 +32,10 @@ export default defineConfig(({ mode }) => {
     server: {
       allowedHosts: ['www.shiji.morgen-ai.com'],
       proxy: {
-        '/api': {
+        '/h5-api': {
           target: 'https://www.shiji.morgen-ai.com/prod-api/',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')
+          rewrite: (path) => path.replace(/^\/h5-api/, '')
         }
       }
     },

@@ -109,7 +109,7 @@ export const clearAuthToken = () => {
 
 // 创建 axios 实例
 const instance: AxiosInstance = axios.create({
-    baseURL: '/api',
+    baseURL: '/h5-api',
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json;charset=UTF-8'
