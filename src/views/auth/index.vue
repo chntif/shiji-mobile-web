@@ -381,7 +381,7 @@ const checkAuthStatus = () => {
 
     // 检查 URL 中是否有 code
     const code = getWechatCodeFromUrl()
-    // const code = '0819M61w3uVPU53UWo3w3TPehO39M61u'
+    // const code = '0515o6Ga1iv5AK0pvvHa1FCn9B45o6Gn'
 
     addDebugLog('info', '检查 URL 参数', {
         完整URL: window.location.href,

@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const base = '/frontend/'
 
   return {
-    base, // 设置基础路径
+    // base, // 设置基础路径
 
     plugins: [
       vue(),

@@ -129,8 +129,8 @@ instance.interceptors.request.use(
         config.headers.clientid = CLIENT_ID
 
         // 添加 Authorization（从 localStorage 读取持久化的 token）
-        const token = getAuthToken()
-        // const token = 'Bearer ' + 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiJzdHVfdXNlcjoxOTgxOTg2OTc3MDY2OTA1NjAxIiwicm5TdHIiOiJicFpPY2dyaENZR1d5TnJpSGc2QUowRzdoUE42c3VqWiIsImNsaWVudGlkIjoiNDI4YTgzMTBjZDQ0Mjc1N2FlNjk5ZGY1ZDg5NGYwNTEiLCJleHAiOjE3NjQyNDE0NjMsInRlbmFudElkIjoiMDAwMDAwIiwidXNlcklkIjoxOTgxOTg2OTc3MDY2OTA1NjAxLCJ1c2VyTmFtZSI6Ind4Xzc3MjQzMzg0IiwiZGVwdElkIjoxOTY4NjExNjQ4MzUxMzA5ODI1LCJ1c2VyVHlwZSI6InN0dV91c2VyIn0.x07GDHF3KD25s13IWkeNKUVlTsENsYe47UyGdkynrQ4'
+        // const token = getAuthToken()
+        const token = 'Bearer ' + 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpblR5cGUiOiJsb2dpbiIsImxvZ2luSWQiOiJzdHVfdXNlcjoxOTgxOTg2OTc3MDY2OTA1NjAxIiwicm5TdHIiOiJicFpPY2dyaENZR1d5TnJpSGc2QUowRzdoUE42c3VqWiIsImNsaWVudGlkIjoiNDI4YTgzMTBjZDQ0Mjc1N2FlNjk5ZGY1ZDg5NGYwNTEiLCJleHAiOjE3NjQyNDE0NjMsInRlbmFudElkIjoiMDAwMDAwIiwidXNlcklkIjoxOTgxOTg2OTc3MDY2OTA1NjAxLCJ1c2VyTmFtZSI6Ind4Xzc3MjQzMzg0IiwiZGVwdElkIjoxOTY4NjExNjQ4MzUxMzA5ODI1LCJ1c2VyVHlwZSI6InN0dV91c2VyIn0.x07GDHF3KD25s13IWkeNKUVlTsENsYe47UyGdkynrQ4'
         if (token) {
             config.headers.Authorization = token
         }
