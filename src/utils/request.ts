@@ -17,8 +17,61 @@ const TOKEN_KEY = 'user_token'
 declare module 'axios' {
     export interface AxiosRequestConfig {
         isEncrypt?: boolean
+        isToken?: boolean
+        repeatSubmit?: boolean
     }
 }
+
+/**
+ * 请求详情接口
+ */
+export interface RequestDetail {
+    id: string
+    url: string
+    method: string
+    requestHeaders: Record<string, any>
+    requestData?: any
+    responseHeaders?: Record<string, any>
+    responseData?: any
+    status?: number
+    statusText?: string
+    timestamp: number
+    duration?: number
+    error?: any
+}
+
+// 请求监听器
+type RequestListener = (detail: RequestDetail) => void
+const requestListeners: RequestListener[] = []
+
+/**
+ * 添加请求监听器
+ */
+export const addRequestListener = (listener: RequestListener) => {
+    requestListeners.push(listener)
+    return () => {
+        const index = requestListeners.indexOf(listener)
+        if (index > -1) {
+            requestListeners.splice(index, 1)
+        }
+    }
+}
+
+/**
+ * 通知所有监听器
+ */
+const notifyListeners = (detail: RequestDetail) => {
+    requestListeners.forEach((listener) => {
+        try {
+            listener(detail)
+        } catch (error) {
+            console.error('请求监听器执行出错:', error)
+        }
+    })
+}
+
+// 存储请求详情
+const requestDetailsMap = new Map<string, RequestDetail>()
 
 /**
  * 获取当前 Authorization Token
@@ -66,6 +119,12 @@ const instance: AxiosInstance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
     (config) => {
+        // 生成唯一请求 ID
+        const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+        // 记录请求开始时间
+        const timestamp = Date.now()
+
         // 添加固定的 clientid
         config.headers.clientid = CLIENT_ID
 
@@ -75,6 +134,9 @@ instance.interceptors.request.use(
         if (token) {
             config.headers.Authorization = token
         }
+
+        // 保存原始请求数据（用于监听器）
+        const originalData = config.data
 
         // 处理加密请求
         if (config.isEncrypt && config.data) {
@@ -107,6 +169,22 @@ instance.interceptors.request.use(
             }
         }
 
+        // 创建请求详情记录
+        const requestDetail: RequestDetail = {
+            id: requestId,
+            url: config.url || '',
+            method: (config.method || 'get').toUpperCase(),
+            requestHeaders: { ...config.headers },
+            requestData: originalData,
+            timestamp
+        }
+
+        // 存储请求详情
+        requestDetailsMap.set(requestId, requestDetail)
+
+            // 将 requestId 附加到 config，方便响应拦截器使用
+            ; (config as any).__requestId = requestId
+
         return config
     },
     (error) => {
@@ -117,7 +195,24 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
     (response: AxiosResponse) => {
-        const { data } = response
+        const { data, config } = response
+        const requestId = (config as any).__requestId
+
+        // 更新请求详情
+        if (requestId && requestDetailsMap.has(requestId)) {
+            const requestDetail = requestDetailsMap.get(requestId)!
+            requestDetail.responseHeaders = response.headers
+            requestDetail.responseData = data
+            requestDetail.status = response.status
+            requestDetail.statusText = response.statusText
+            requestDetail.duration = Date.now() - requestDetail.timestamp
+
+            // 通知监听器
+            notifyListeners(requestDetail)
+
+            // 清理存储
+            requestDetailsMap.delete(requestId)
+        }
 
         // 根据实际业务调整响应处理逻辑
         // 假设后端返回格式为：{ code: number, data: any, msg: string }
@@ -133,6 +228,29 @@ instance.interceptors.response.use(
         }
     },
     (error) => {
+        const requestId = (error.config as any)?.__requestId
+
+        // 更新请求详情（错误情况）
+        if (requestId && requestDetailsMap.has(requestId)) {
+            const requestDetail = requestDetailsMap.get(requestId)!
+            requestDetail.error = {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            }
+            requestDetail.status = error.response?.status
+            requestDetail.statusText = error.response?.statusText
+            requestDetail.responseHeaders = error.response?.headers
+            requestDetail.responseData = error.response?.data
+            requestDetail.duration = Date.now() - requestDetail.timestamp
+
+            // 通知监听器
+            notifyListeners(requestDetail)
+
+            // 清理存储
+            requestDetailsMap.delete(requestId)
+        }
+
         // HTTP 错误处理
         let message = '网络请求失败'
         let shouldRedirectToAuth = false

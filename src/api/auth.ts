@@ -45,7 +45,9 @@ export const loginByWechatCode = (xcxCode: string) => {
             xcxCode
         },
         {
-            isEncrypt: true // 启用加密
+            isToken: false,
+            isEncrypt: true,
+            repeatSubmit: false
         }
     )
 }
