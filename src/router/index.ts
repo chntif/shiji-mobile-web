@@ -8,7 +8,7 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('../views/home/index.vue'),
-      meta: { requiresAuth: false } // 需要登录
+      meta: { requiresAuth: true } // 需要登录
     },
     {
       path: '/orders',
