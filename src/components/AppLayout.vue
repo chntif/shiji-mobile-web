@@ -64,7 +64,7 @@ onUnmounted(() => {
 
   // PC 端：限制宽度，模拟手机屏幕
   @media (min-width: 769px) {
-    width: 100vw; // 中间约40%为内容区域
+    width: 80vw; // 中间约40%为内容区域
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
   }
 }

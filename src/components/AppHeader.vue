@@ -2,9 +2,10 @@
   <div class="app-header-wrapper">
     <!-- 自定义顶部栏 -->
     <div class="custom-header">
-      <div class="header-left" @click="handleHome">
+      <div v-if="showHomeButton" class="header-left" @click="handleHome">
         <van-icon name="home-o" class="home-icon" />
       </div>
+      <div v-else class="header-left-placeholder"></div>
       <div class="header-title">{{ title }}</div>
       <div class="header-menu" @click="showMenu = true">
         <div class="menu-icon">
@@ -33,10 +34,6 @@
             <van-icon name="orders-o" />
             <span>订单</span>
           </div>
-          <div class="menu-item" @click="handleAuth">
-            <van-icon :name="isLogin ? 'sign' : 'user-o'" />
-            <span>{{ isLogin ? '退出' : '登录' }}</span>
-          </div>
         </div>
       </div>
     </transition>
@@ -45,22 +42,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { showDialog, showToast } from 'vant'
-import 'vant/es/dialog/style'
-import { useUserStore } from '@/stores/user'
-import { clearAuthToken } from '@/utils/request'
+import { useRouter, useRoute } from 'vue-router'
 
 defineProps<{
   title: string
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const showMenu = ref(false)
-const userStore = useUserStore()
 
-// 从 Pinia store 获取登录状态
-const isLogin = computed(() => userStore.isLogin())
+// 判断是否显示返回首页按钮（只在非首页时显示）
+const showHomeButton = computed(() => route.path !== '/')
 
 // 跳转到商品购买页（主页）
 const handleHome = () => {
@@ -73,42 +66,6 @@ const handleOrders = () => {
   showMenu.value = false
   router.push('/orders')
 }
-
-// 登录/退出
-const handleAuth = () => {
-  showMenu.value = false
-
-  if (isLogin.value) {
-    // 退出登录
-    showDialog({
-      title: '提示',
-      message: '确定要退出登录吗？',
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      showCancelButton: true
-    })
-      .then(() => {
-        // 确认退出
-        userStore.clearToken()
-        clearAuthToken()
-
-        showToast({
-          message: '已退出登录',
-          position: 'top'
-        })
-
-        // 跳转到授权页面
-        router.push('/auth')
-      })
-      .catch(() => {
-        // 取消退出
-        console.log('取消退出')
-      })
-  } else {
-    // 跳转到授权页面进行登录
-    router.push('/auth')
-  }
-}
 </script>
 
 <style scoped lang="scss">
@@ -118,8 +75,9 @@ const handleAuth = () => {
   .custom-header {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
     height: 56px;
     background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
     display: flex;
@@ -128,6 +86,16 @@ const handleAuth = () => {
     padding: 0 16px;
     z-index: 999;
     box-shadow: 0 2px 8px rgba(0, 180, 148, 0.2);
+
+    // 移动端：占满全屏
+    @media (max-width: 768px) {
+      max-width: 100%;
+    }
+
+    // PC 端：限制宽度，与容器保持一致
+    @media (min-width: 769px) {
+      width: 80vw;
+    }
 
     .header-left {
       width: 40px;
@@ -141,6 +109,11 @@ const handleAuth = () => {
         font-size: 22px;
         color: #fff;
       }
+    }
+
+    .header-left-placeholder {
+      width: 40px;
+      height: 40px;
     }
 
     .header-title {
