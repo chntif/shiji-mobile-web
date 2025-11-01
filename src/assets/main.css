@@ -1,1 +1,19 @@
 @import './base.css';
+
+/* Toast 样式覆盖 - 确保文字在一行内显示 */
+.van-toast {
+    min-width: auto !important;
+    max-width: 80vw !important;
+    padding: 12px 20px !important;
+}
+
+.van-toast__text {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* Loading Toast 样式 */
+.van-toast--loading .van-toast__text {
+    white-space: nowrap !important;
+}
