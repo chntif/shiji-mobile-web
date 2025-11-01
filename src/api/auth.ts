@@ -15,19 +15,25 @@ export interface WechatLoginParams {
 }
 
 /**
- * 登录响应数据
+ * 登录响应数据（data 字段中的内容）
+ */
+export interface LoginData {
+    access_token: string
+    refresh_token?: string | null
+    expire_in?: number
+    refresh_expire_in?: number | null
+    client_id?: string
+    openid?: string
+    scope?: string | null
+}
+
+/**
+ * 登录响应结构（完整响应）
  */
 export interface LoginResponse {
-    access_token: string
-    expires_in?: number
-    token_type?: string
-    refresh_token?: string
-    user_info?: {
-        openid?: string
-        nickname?: string
-        avatar?: string
-        // 其他用户信息
-    }
+    code: number
+    msg: string
+    data: LoginData
 }
 
 /**

@@ -277,20 +277,42 @@ const loginWithCode = async (code: string) => {
         console.log('使用 code 登录:', code)
         addDebugLog('info', '获取到 Code', code)
 
+        // 🔥 重要：立即清除 URL 中的 code 参数，防止重复使用
+        // 微信的 code 只能使用一次，使用后必须清除
+        clearWechatAuthParams()
+        addDebugLog('info', '清除 URL 中的 Code', '已从 URL 中移除 code 参数，防止重复使用')
+
         // 调用登录接口（请求详情会通过监听器自动记录）
         const response = await loginByWechatCode(code)
 
         console.log('登录响应:', response)
 
+        // 打印完整的登录接口返回数据
+        addDebugLog('success', '登录接口返回数据', response)
+
+        // 🔥 接口返回的数据结构：{ code: 200, msg: "操作成功", data: { access_token: "..." } }
+        // 所以需要从 response.data 中获取 access_token
+        const tokenData = response.data || response // 兼容两种可能的返回结构
+        const accessToken = tokenData.access_token
+
+        addDebugLog('info', '解析 Token 数据', {
+            原始响应: response,
+            Token数据: tokenData,
+            access_token存在: !!accessToken
+        })
+
         // 保存 token
-        if (response.access_token) {
-            setAuthToken(response.access_token)
-            userStore.setToken(response.access_token)
+        if (accessToken) {
+            setAuthToken(accessToken)
+            userStore.setToken(accessToken)
 
-            addDebugLog('success', '保存 Token', `Token: ${response.access_token.substring(0, 20)}...`)
-
-            // 清除 URL 中的 code 参数
-            clearWechatAuthParams()
+            addDebugLog('success', '保存 Token', {
+                token: accessToken,
+                tokenPreview: `${accessToken.substring(0, 30)}...`,
+                expiresIn: tokenData.expire_in || '未提供',
+                openid: tokenData.openid || '未提供',
+                clientId: tokenData.client_id || '未提供'
+            })
 
             showToast({
                 message: '登录成功',
@@ -303,15 +325,32 @@ const loginWithCode = async (code: string) => {
                 const redirect = route.query.redirect as string || '/'
                 addDebugLog('info', '准备跳转', `跳转到: ${redirect}`)
                 router.replace(redirect)
-            }, 1500) // 增加延迟，让用户有时间查看请求详情
+            }, 2000) // 增加延迟，让用户有时间查看请求详情
         } else {
+            addDebugLog('error', '登录失败', {
+                message: '响应中未包含 access_token',
+                响应结构: response,
+                data字段: response.data
+            })
             throw new Error('未获取到 access_token')
         }
     } catch (err: any) {
         console.error('登录失败:', err)
+
+        // 打印完整的错误信息
+        addDebugLog('error', '登录失败 - 详细错误', {
+            message: err.msg || err.message || '登录失败',
+            code: err.code,
+            response: err.response?.data,
+            fullError: err
+        })
+
         error.value = true
         errorMessage.value = err.msg || err.message || '登录失败，请重试'
         loading.value = false
+
+        // 登录失败时，code 已经被使用过了，URL 中的 code 已经在上面被清除
+        // 用户需要重新授权才能获取新的 code
     }
 }
 
@@ -361,7 +400,13 @@ const startAuth = () => {
 const retryAuth = () => {
     error.value = false
     loading.value = true
-    checkAuthStatus()
+
+    // 🔥 重要：重试时必须清除 URL 中可能残留的旧 code
+    clearWechatAuthParams()
+    addDebugLog('warning', '重新授权', '清除旧的授权信息，准备重新获取授权')
+
+    // 强制重新开始授权流程（不检查 URL 中的 code，直接跳转授权页面）
+    startAuth()
 }
 
 /**
@@ -381,23 +426,35 @@ const checkAuthStatus = () => {
 
     // 检查 URL 中是否有 code
     const code = getWechatCodeFromUrl()
-    // const code = '0515o6Ga1iv5AK0pvvHa1FCn9B45o6Gn'
+
+    // 解析 URL 参数，显示详细信息
+    const urlParams = new URLSearchParams(window.location.search)
+    const allParams: Record<string, string> = {}
+    urlParams.forEach((value, key) => {
+        allParams[key] = value
+    })
 
     addDebugLog('info', '检查 URL 参数', {
         完整URL: window.location.href,
+        所有URL参数: allParams,
         是否有code: !!code,
-        code值: code || '未获取到'
+        code值: code || '未获取到',
+        code长度: code?.length || 0
     })
 
     if (code) {
         // 有 code，执行登录
         console.log('检测到授权码，开始登录')
-        addDebugLog('success', '检测到授权码', '准备使用 Code 登录')
+        addDebugLog('success', '检测到授权码', {
+            message: '准备使用 Code 登录',
+            code: code,
+            提示: 'Code 只能使用一次，使用后会立即清除'
+        })
         loginWithCode(code)
     } else {
         // 无 code，开始授权流程
         console.log('无授权码，开始授权流程')
-        addDebugLog('warning', '未检测到授权码', '准备跳转到微信授权页面')
+        addDebugLog('warning', '未检测到授权码', '准备跳转到微信授权页面获取新的 Code')
         startAuth()
     }
 }

@@ -66,9 +66,33 @@ export const getWechatCodeFromUrl = (): string | null => {
  */
 export const clearWechatAuthParams = (): void => {
     const url = new URL(window.location.href)
+    const hasCode = url.searchParams.has('code')
+    const hasState = url.searchParams.has('state')
+
+    // 删除 code 和 state 参数
     url.searchParams.delete('code')
     url.searchParams.delete('state')
-    window.history.replaceState({}, document.title, url.pathname + url.hash)
+
+    // 构建新的 URL
+    let newUrl = url.pathname
+
+    // 保留其他查询参数
+    const searchParams = url.searchParams.toString()
+    if (searchParams) {
+        newUrl += '?' + searchParams
+    }
+
+    // 保留 hash
+    if (url.hash) {
+        newUrl += url.hash
+    }
+
+    // 只有在确实清除了参数时才更新 URL
+    if (hasCode || hasState) {
+        window.history.replaceState({}, document.title, newUrl)
+        console.log('已清除 URL 中的授权参数:', { hasCode, hasState })
+        console.log('新 URL:', newUrl)
+    }
 }
 
 /**
